@@ -4,9 +4,19 @@
 #include <halp/controls.hpp>
 #include <halp/meta.hpp>
 #include <halp/file_port.hpp>
-#include <ATen/core/ivalue.h>
-#include <torch/script.h>
+
+#include <cstdlib> // setenv
+#include <boost/python.hpp> 
+#include <boost/python/numpy.hpp>
+
+#include <string>
+#include <sstream>
+#include <filesystem>
+
 #include <iostream>
+
+namespace python = boost::python;
+namespace np = boost::python::numpy;
 
 namespace Example
 {
@@ -14,75 +24,78 @@ namespace Example
     class VAE_synth
     {
     public:
-        halp_meta(name, "Pytorch VAE Synth Addon")
+        halp_meta(name, "VAE Synth")
         halp_meta(category, "Audio")
         halp_meta(c_name, "VAE_synth")
         halp_meta(uuid, "14f96468-b70c-4280-8179-460cbc1c1406")
 
-        // Define inputs and outputs ports.
-        // See the docs at https://github.com/celtera/avendish
-        struct model_info
+        VAE_synth()
         {
-            torch::jit::script::Module  model;
-            bool                        model_loaded;
-        } model_data;
+            try
+            {
+                Py_Initialize(); // Initializes python interpreter the earliest possible to avoid problems
+                // idea : put some guards on call of python to allow calling Py_Initialize in prepare?
+            }
+            catch (const python::error_already_set&)
+            {
+                PyErr_Print();
+            }
+        }
 
+        struct python_env
+        {
+            python::object main;
+        } penv;
+    
         struct
         {
             struct {
                 static consteval auto name() { return "in"; }
                 float value;
             } in;
-            struct : halp::file_port<"Traced model file", halp::mmap_file_view> {
-                void update(VAE_synth& obj) {
-                    obj.model_data.model_loaded = obj.load_model();
-                }
-            } model_file;
 
+            // workspace folder path to allow import of custom modules in python
+            halp::lineedit<"Line edit", "">  workspace_folder;
+            // push button to load workspace folder path
+            struct {
+                enum widget { pushbutton };
+                halp_meta(name, "Enter folder")
+                void update(VAE_synth& obj);
+                bool value;
+            } folder_refresh;
+            using folder_refresh_t = decltype(folder_refresh);
+
+            // code editors for python
+            // one is for model loading only
+            // the other is for output synthesis / editing
+            struct : halp::lineedit<"Program", 
+            "import torch                                                       \n"
+            "model = None # your final model should be loaded in this variable  \n"
+            "model.eval()                                                       \n"
+            >
+            {
+                halp_meta(language, "Python")
+                void update(VAE_synth& obj);
+            } model_loader;
+            using model_loader_t = decltype(model_loader);
             struct : halp::lineedit<"Program", "">
             {
                 halp_meta(language, "Python")
-
-                void update(VAE_synth& obj)
-                {
-                    std::cerr << "in program : " << obj.inputs.program.value << std::endl;
-                }
+                void update(VAE_synth& obj);
             } program;
+            using program_t = decltype(program);
 
         } inputs;
+        using inputs_t = decltype(inputs);
 
-        struct
-        {
-            struct {
-                static consteval auto name() { return "out"; }
-                float value;
-            } out;
+        struct {
+            halp::fixed_audio_bus<"Output", float, 2> audio;
         } outputs;
 
         using setup = halp::setup;
         void prepare(halp::setup info)
         {
-            model_data.model_loaded = false;
-            model_data.model_loaded = load_model();
-        }
-        
-        bool load_model()
-        {
-            std::string filename { inputs.model_file.file.filename };
-            try
-            {
-                // Deserialize the Scriptmodel from a file using torch::jit::load().
-                model_data.model = torch::jit::load(filename);
-            }
-            catch (const c10::Error& e)
-            {
-                std::cerr << "error loading the model : " << filename << "\n";
-                return false;
-            }
-
-            std::cout << "Module : " << filename << " loaded\n";
-
-            return true;
+            std::cerr << "VAE_synth::prepare" << std::endl;
         }
 
         // Do our processing for N samples
