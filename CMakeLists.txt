@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH 1)
-set(CMAKE_PREFIX_PATH "/usr/lib/libtorch/share/cmake/Torch")
 
 if(NOT TARGET score_lib_base)
   include(ScoreExternalAddon)
@@ -28,13 +26,17 @@ avnd_score_plugin_add(
   NAMESPACE Example
 )
 
-# set(CMAKE_INSTALL_RPATH "/usr/lib/libtorch")
-# set(CMAKE_BUILD_RPATH "/usr/lib/libtorch")
-find_package(Torch REQUIRED)
-target_link_libraries(score_addon_VAE_synth PRIVATE "${TORCH_LIBRARIES}")
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
+if(VERBOSE)
+    cmake_print_variables(Python3_INCLUDE_DIRS)
+    cmake_print_variables(Python3_NumPy_INCLUDE_DIRS)
+endif()
+find_package(Boost COMPONENTS python numpy REQUIRED)
+target_link_libraries(score_addon_VAE_synth PRIVATE  ${Boost_LIBRARIES} ${Python3_LIBRARIES} ${Python3_NumPy_LIBRARIES})
+target_include_directories(score_addon_VAE_synth  PRIVATE ${Python3_INCLUDE_DIRS} ${Python3_NumPy_INCLUDE_DIRS})
 
 avnd_score_plugin_finalize(
   BASE_TARGET score_addon_VAE_synth
   PLUGIN_VERSION 1
-  PLUGIN_UUID "a1a3bb71-aab1-446f-a897-de7eed02c873"
+  PLUGIN_UUID "628ef6ec-07d2-49bc-8dee-18db1e1775de"
 )
