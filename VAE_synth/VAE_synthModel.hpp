@@ -33,7 +33,11 @@ namespace Example
         {
             try
             {
-                Py_Initialize(); // Initializes python interpreter the earliest possible to avoid problems
+                Py_Initialize(); 
+                penv.main = python::import("__main__");
+                python::exec("import sys; import os", penv.main.attr("__dict__"));
+
+                // Initializes python interpreter the earliest possible to avoid problems
                 // idea : put some guards on call of python to allow calling Py_Initialize in prepare?
             }
             catch (const python::error_already_set&)
@@ -55,7 +59,7 @@ namespace Example
             } in;
 
             // workspace folder path to allow import of custom modules in python
-            halp::lineedit<"Line edit", "">  workspace_folder;
+            halp::lineedit<"Workspace folder", "">  workspace_folder;
             // push button to load workspace folder path
             struct {
                 enum widget { pushbutton };
@@ -66,18 +70,22 @@ namespace Example
             using folder_refresh_t = decltype(folder_refresh);
 
             // code editors for python
-            // one is for model loading only
-            // the other is for output synthesis / editing
+            // python code editor for model loading
             struct : halp::lineedit<"Program", 
             "import torch                                                       \n"
-            "model = None # your final model should be loaded in this variable  \n"
-            "model.eval()                                                       \n"
+            "\n"
+            "model = None # torch.load your model  \n"
+            "if model != None:\n"
+            "    print(model)\n"
+            "    model.eval()\n"
             >
             {
                 halp_meta(language, "Python")
                 void update(VAE_synth& obj);
             } model_loader;
             using model_loader_t = decltype(model_loader);
+
+            // python code editor for output treatment
             struct : halp::lineedit<"Program", "">
             {
                 halp_meta(language, "Python")
@@ -95,7 +103,6 @@ namespace Example
         using setup = halp::setup;
         void prepare(halp::setup info)
         {
-            std::cerr << "VAE_synth::prepare" << std::endl;
         }
 
         // Do our processing for N samples
