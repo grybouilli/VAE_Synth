@@ -52,7 +52,7 @@ namespace Example
 
         struct internal_audio
         {
-
+            void refresh_from(const python::object& module, std::string arr_name);
             std::vector<_Float32> audio_file; // work something out to allow more data types
             int                   current_frame;
         } internal_audio_data;
@@ -99,8 +99,6 @@ namespace Example
                 void update(VAE_synth& obj);
             } program;
             using program_t = decltype(program);
-
-            output_type_choice outtype_choice;
 
         } inputs;
         using inputs_t = decltype(inputs);
