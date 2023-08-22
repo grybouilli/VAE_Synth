@@ -20,7 +20,12 @@ avnd_score_plugin_add(
   SOURCES
     VAE_synth/VAE_synth.hpp
     VAE_synth/VAE_synthModel.hpp
+    VAE_synth/VAE_synthWidgets.hpp
     VAE_synth/VAE_synthModel.cpp
+    VAE_synth/audioUtils.cpp
+    VAE_synth/audioUtils.hpp
+    VAE_synth/numpyToCppUtils.cpp
+    VAE_synth/numpyToCppUtils.hpp
   TARGET VAE_synth
   MAIN_CLASS VAE_synth
   NAMESPACE Example
