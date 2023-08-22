@@ -5,15 +5,17 @@
 #include <halp/meta.hpp>
 #include <halp/file_port.hpp>
 
-#include <cstdlib> // setenv
 #include <boost/python.hpp> 
 #include <boost/python/numpy.hpp>
 
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include <vector>
 
 #include <iostream>
+
+#include "VAE_synthWidgets.hpp"
 
 namespace python = boost::python;
 namespace np = boost::python::numpy;
@@ -34,6 +36,8 @@ namespace Example
             try
             {
                 Py_Initialize(); 
+                np::initialize();
+
                 penv.main = python::import("__main__");
                 python::exec("import sys; import os", penv.main.attr("__dict__"));
 
@@ -46,18 +50,21 @@ namespace Example
             }
         }
 
+        struct internal_audio
+        {
+
+            std::vector<_Float32> audio_file; // work something out to allow more data types
+            int                   current_frame;
+        } internal_audio_data;
+
         struct python_env
         {
             python::object main;
         } penv;
     
+        // USER INPUTS
         struct
         {
-            struct {
-                static consteval auto name() { return "in"; }
-                float value;
-            } in;
-
             // workspace folder path to allow import of custom modules in python
             halp::lineedit<"Workspace folder", "">  workspace_folder;
             // push button to load workspace folder path
@@ -93,12 +100,17 @@ namespace Example
             } program;
             using program_t = decltype(program);
 
+            output_type_choice outtype_choice;
+
         } inputs;
         using inputs_t = decltype(inputs);
+        // !USER INPUTS
 
+        // USER OUTPUTS
         struct {
-            halp::fixed_audio_bus<"Output", float, 2> audio;
+            halp::fixed_audio_bus<"Output", float, 1> audio;
         } outputs;
+        // !USER OUTPUTS
 
         using setup = halp::setup;
         void prepare(halp::setup info)
