@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-#include "VAE_synthWidgets.hpp"
+#include <VAE_synth/VAE_synthWidgets.hpp>
 
 namespace python = boost::python;
 namespace np = boost::python::numpy;
@@ -50,12 +50,7 @@ namespace Example
             }
         }
 
-        struct internal_audio
-        {
-            void refresh_from(const python::object& module, std::string arr_name);
-            std::vector<_Float32> audio_file; // work something out to allow more data types
-            int                   current_frame;
-        } internal_audio_data;
+        internal_audio internal_audio_data;
 
         struct python_env
         {
@@ -71,20 +66,19 @@ namespace Example
             struct {
                 enum widget { pushbutton };
                 halp_meta(name, "Enter folder")
-                void update(VAE_synth& obj);
+                void update(VAE_synth&);
                 bool value;
             } folder_refresh;
             using folder_refresh_t = decltype(folder_refresh);
 
             // code editors for python
             // python code editor for model loading
-            struct : halp::lineedit<"Program", 
-            "import torch                                                       \n"
-            "\n"
-            "model = None # torch.load your model  \n"
-            "if model != None:\n"
-            "    print(model)\n"
-            "    model.eval()\n"
+            struct : halp::lineedit<"Load model", 
+            "import torch                           \n"
+            "                                       \n"
+            "model = None # torch.load your model   \n"
+            "if model != None:                      \n"
+            "    model.eval()                       \n"
             >
             {
                 halp_meta(language, "Python")
@@ -93,12 +87,26 @@ namespace Example
             using model_loader_t = decltype(model_loader);
 
             // python code editor for output treatment
-            struct : halp::lineedit<"Program", "">
+            struct : halp::lineedit<"Program", 
+            "import numpy as np                         \n"
+            "                                           \n"
+            "output = np.zeros(0, dtype=\'float32\')    \n"
+            >
             {
                 halp_meta(language, "Python")
                 void update(VAE_synth& obj);
+
             } program;
             using program_t = decltype(program);
+
+            struct code_executor {
+                enum widget { pushbutton };
+                halp_meta(name, "Execute code")
+                bool value;
+            } model_loader_e, program_e;
+
+
+            void handle_inputs(VAE_synth&);
 
         } inputs;
         using inputs_t = decltype(inputs);
