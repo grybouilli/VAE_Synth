@@ -99,15 +99,6 @@ namespace Example
             } program;
             using program_t = decltype(program);
 
-            struct code_executor {
-                enum widget { pushbutton };
-                halp_meta(name, "Execute code")
-                bool value;
-            } model_loader_e, program_e;
-
-
-            void handle_inputs(VAE_synth&);
-
         } inputs;
         using inputs_t = decltype(inputs);
         // !USER INPUTS

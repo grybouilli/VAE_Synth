@@ -18,14 +18,6 @@ void exec_code(const std::string& code, python::object module)
 namespace Example
 {
 
-void VAE_synth::inputs_t::handle_inputs(VAE_synth& obj)
-{
-    if (folder_refresh.value)
-    {
-        
-    }
-}
-
 // adds the given path to python path to allow imports of custom modules
 void VAE_synth::inputs_t::folder_refresh_t::update(VAE_synth& obj)
 {
@@ -65,7 +57,6 @@ void VAE_synth::inputs_t::program_t::update(VAE_synth& obj)
 
 void VAE_synth::operator()(halp::tick t)
 {
-    inputs.handle_inputs(*this);
 
     auto& in = internal_audio_data.audio_file;
     auto& out = outputs.audio;
